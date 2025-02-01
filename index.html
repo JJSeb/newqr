@@ -1,276 +1,277 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Scanner Demo</title>
     <style>
-      /* General styles */
-      body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-      }
+        /* General styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
 
-      h1 {
-        margin-bottom: 16px;
-      }
+        h1 {
+            margin-bottom: 16px;
+        }
 
-      div {
-        margin-bottom: 16px;
-      }
+        div {
+            margin-bottom: 16px;
+        }
 
-      #video-container {
-        line-height: 0;
-        margin-bottom: 16px;
-      }
+        #video-container {
+            line-height: 0;
+            margin-bottom: 16px;
+            position: relative;
+            display: inline-block;
+        }
 
-      #flash-toggle {
-        display: none;
-      }
+        #qr-video {
+            width: 100%;
+            max-width: 500px;
+            height: auto;
+        }
 
-      hr {
-        margin-top: 32px;
-      }
+        #flash-toggle {
+            display: none;
+        }
 
-      input[type="file"] {
-        display: block;
-        margin-bottom: 16px;
-      }
+        hr {
+            margin-top: 32px;
+        }
 
-      /* Custom highlight styles */
-      #video-container.example-style-1 .scan-region-highlight-svg,
-      #video-container.example-style-1 .code-outline-highlight {
-        stroke: #64a2f3 !important;
-      }
+        input[type="file"] {
+            display: block;
+            margin-bottom: 16px;
+        }
 
-      #video-container.example-style-2 {
-        position: relative;
-        width: max-content;
-        height: max-content;
-        overflow: hidden;
-      }
+        /* Visual feedback for tap-to-focus */
+        #focus-feedback {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border: 3px solid #00ff00;
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
 
-      #video-container.example-style-2 .scan-region-highlight {
-        border-radius: 30px;
-        outline: rgba(0, 0, 0, 0.25) solid 50vmax;
-      }
+        /* Custom highlight styles */
+        #video-container.example-style-1 .scan-region-highlight-svg,
+        #video-container.example-style-1 .code-outline-highlight {
+            stroke: #64a2f3 !important;
+        }
 
-      #video-container.example-style-2 .scan-region-highlight-svg {
-        display: none;
-      }
+        #video-container.example-style-2 {
+            position: relative;
+            width: max-content;
+            height: max-content;
+            overflow: hidden;
+        }
 
-      #video-container.example-style-2 .code-outline-highlight {
-        stroke: rgba(255, 255, 255, 0.5) !important;
-        stroke-width: 15 !important;
-        stroke-dasharray: none !important;
-      }
+        #video-container.example-style-2 .scan-region-highlight {
+            border-radius: 30px;
+            outline: rgba(0, 0, 0, .25) solid 50vmax;
+        }
+
+        #video-container.example-style-2 .scan-region-highlight-svg {
+            display: none;
+        }
+
+        #video-container.example-style-2 .code-outline-highlight {
+            stroke: rgba(255, 255, 255, .5) !important;
+            stroke-width: 15 !important;
+            stroke-dasharray: none !important;
+        }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     <h1>Scan from WebCam:</h1>
     <div id="video-container">
-      <video id="qr-video"></video>
+        <video id="qr-video"></video>
+        <div id="focus-feedback"></div>
     </div>
 
     <!-- Scan region and inversion mode controls -->
     <div>
-      <label>
-        Highlight Style:
-        <select id="scan-region-highlight-style-select">
-          <option value="default-style">Default style</option>
-          <option value="example-style-1">Example custom style 1</option>
-          <option value="example-style-2">Example custom style 2</option>
-        </select>
-      </label>
-      <label>
-        <input id="show-scan-region" type="checkbox" />
-        Show scan region canvas
-      </label>
+        <label>
+            Highlight Style:
+            <select id="scan-region-highlight-style-select">
+                <option value="default-style">Default style</option>
+                <option value="example-style-1">Example custom style 1</option>
+                <option value="example-style-2">Example custom style 2</option>
+            </select>
+        </label>
+        <label>
+            <input id="show-scan-region" type="checkbox">
+            Show scan region canvas
+        </label>
     </div>
 
     <div>
-      <b>Inversion Mode:</b>
-      <select id="inversion-mode-select">
-        <option value="original">
-          Original (dark QR on bright background)
-        </option>
-        <option value="invert">Invert (bright QR on dark background)</option>
-        <option value="both">Scan both</option>
-      </select>
+        <b>Inversion Mode:</b>
+        <select id="inversion-mode-select">
+            <option value="original">Original (dark QR on bright background)</option>
+            <option value="invert">Invert (bright QR on dark background)</option>
+            <option value="both">Scan both</option>
+        </select>
     </div>
 
     <!-- Camera and flash controls -->
     <b>Device has camera: </b><span id="cam-has-camera"></span>
-    <br />
+    <br>
     <b>Preferred camera:</b>
     <select id="cam-list">
-      <option value="environment" selected>Environment Facing (default)</option>
-      <option value="user">User Facing</option>
+        <option value="environment" selected>Environment Facing (default)</option>
+        <option value="user">User Facing</option>
     </select>
-    <br />
+    <br>
     <b>Camera has flash: </b><span id="cam-has-flash"></span>
     <div>
-      <button id="flash-toggle">
-        📸 Flash: <span id="flash-state">off</span>
-      </button>
-    </div>
-
-    <!-- Focus mode controls -->
-    <div>
-      <b>Focus Mode:</b>
-      <select id="focus-mode-select">
-        <option value="continuous">Continuous (Auto-focus)</option>
-        <option value="manual">Manual (Fixed focus)</option>
-      </select>
-      <button id="apply-focus-mode">Apply Focus Mode</button>
+        <button id="flash-toggle">📸 Flash: <span id="flash-state">off</span></button>
     </div>
 
     <!-- QR code detection results -->
     <b>Detected QR code: </b><span id="cam-qr-result">None</span>
-    <br />
+    <br>
     <b>Last detected at: </b><span id="cam-qr-result-timestamp"></span>
-    <br />
+    <br>
 
     <!-- Start/Stop buttons -->
     <button id="start-button">Start</button>
     <button id="stop-button">Stop</button>
-    <hr />
+    <hr>
 
     <!-- File-based QR scanning -->
     <h1>Scan from File:</h1>
-    <input type="file" id="file-selector" />
+    <input type="file" id="file-selector">
     <b>Detected QR code: </b><span id="file-qr-result">None</span>
 
     <script type="module">
-      import QrScanner from "./refactor.js";
+        import QrScanner from "./refactor.js";
 
-      // DOM elements
-      const video = document.getElementById("qr-video");
-      const camHasCamera = document.getElementById("cam-has-camera");
-      const camList = document.getElementById("cam-list");
-      const camHasFlash = document.getElementById("cam-has-flash");
-      const flashToggle = document.getElementById("flash-toggle");
-      const flashState = document.getElementById("flash-state");
-      const camQrResult = document.getElementById("cam-qr-result");
-      const camQrResultTimestamp = document.getElementById(
-        "cam-qr-result-timestamp"
-      );
-      const fileSelector = document.getElementById("file-selector");
-      const fileQrResult = document.getElementById("file-qr-result");
-      const focusModeSelect = document.getElementById("focus-mode-select");
-      const applyFocusModeButton = document.getElementById("apply-focus-mode");
+        // DOM elements
+        const video = document.getElementById('qr-video');
+        const camHasCamera = document.getElementById('cam-has-camera');
+        const camList = document.getElementById('cam-list');
+        const camHasFlash = document.getElementById('cam-has-flash');
+        const flashToggle = document.getElementById('flash-toggle');
+        const flashState = document.getElementById('flash-state');
+        const camQrResult = document.getElementById('cam-qr-result');
+        const camQrResultTimestamp = document.getElementById('cam-qr-result-timestamp');
+        const fileSelector = document.getElementById('file-selector');
+        const fileQrResult = document.getElementById('file-qr-result');
+        const focusFeedback = document.getElementById('focus-feedback');
 
-      // Helper function to display QR code results
-      function setResult(label, result) {
-        console.log("QR Code Detected:", result.data);
-        label.textContent = result.data;
-        camQrResultTimestamp.textContent = new Date().toLocaleString();
-        label.style.color = "teal";
-        clearTimeout(label.highlightTimeout);
-        label.highlightTimeout = setTimeout(
-          () => (label.style.color = "inherit"),
-          100
-        );
-      }
-
-      // Initialize QR Scanner
-      const scanner = new QrScanner(
-        video,
-        (result) => setResult(camQrResult, result),
-        {
-          onDecodeError: (error) => {
-            camQrResult.textContent = error;
-            camQrResult.style.color = "inherit";
-          },
-          highlightScanRegion: true,
-          highlightCodeOutline: true,
+        // Helper function to display QR code results
+        function setResult(label, result) {
+            console.log("QR Code Detected:", result.data);
+            label.textContent = result.data;
+            camQrResultTimestamp.textContent = new Date().toLocaleString();
+            label.style.color = 'teal';
+            clearTimeout(label.highlightTimeout);
+            label.highlightTimeout = setTimeout(() => label.style.color = 'inherit', 100);
         }
-      );
 
-      // Update flash availability
-      const updateFlashAvailability = () => {
-        scanner.hasFlash().then((hasFlash) => {
-          camHasFlash.textContent = hasFlash;
-          flashToggle.style.display = hasFlash ? "inline-block" : "none";
-        });
-      };
-
-      // Start the scanner and initialize camera list
-      scanner.start().then(() => {
-        updateFlashAvailability();
-        QrScanner.listCameras(true).then((cameras) => {
-          camList.innerHTML = "";
-          cameras.forEach((camera) => {
-            const option = document.createElement("option");
-            option.value = camera.id;
-            option.text = camera.label;
-            camList.appendChild(option);
-          });
-        });
-      });
-
-      // Check if the device has a camera
-      QrScanner.hasCamera().then(
-        (hasCamera) => (camHasCamera.textContent = hasCamera)
-      );
-
-      // Event listeners
-      document
-        .getElementById("scan-region-highlight-style-select")
-        .addEventListener("change", (e) => {
-          document.getElementById("video-container").className = e.target.value;
-          scanner._updateOverlay();
+        // Initialize QR Scanner
+        const scanner = new QrScanner(video, result => setResult(camQrResult, result), {
+            onDecodeError: error => {
+                camQrResult.textContent = error;
+                camQrResult.style.color = 'inherit';
+            },
+            highlightScanRegion: true,
+            highlightCodeOutline: true,
         });
 
-      document
-        .getElementById("show-scan-region")
-        .addEventListener("change", (e) => {
-          scanner.$canvas.style.display = e.target.checked ? "block" : "none";
+        // Update flash availability
+        const updateFlashAvailability = () => {
+            scanner.hasFlash().then(hasFlash => {
+                camHasFlash.textContent = hasFlash;
+                flashToggle.style.display = hasFlash ? 'inline-block' : 'none';
+            });
+        };
+
+        // Start the scanner and initialize camera list
+        scanner.start().then(() => {
+            updateFlashAvailability();
+            QrScanner.listCameras(true).then(cameras => {
+                camList.innerHTML = '';
+                cameras.forEach(camera => {
+                    const option = document.createElement('option');
+                    option.value = camera.id;
+                    option.text = camera.label;
+                    camList.appendChild(option);
+                });
+            });
         });
 
-      document
-        .getElementById("inversion-mode-select")
-        .addEventListener("change", (event) => {
-          scanner.setInversionMode(event.target.value);
+        // Check if the device has a camera
+        QrScanner.hasCamera().then(hasCamera => camHasCamera.textContent = hasCamera);
+
+        // Event listeners
+        document.getElementById('scan-region-highlight-style-select').addEventListener('change', (e) => {
+            document.getElementById('video-container').className = e.target.value;
+            scanner._updateOverlay();
         });
 
-      camList.addEventListener("change", (event) => {
-        scanner.setCamera(event.target.value).then(updateFlashAvailability);
-      });
-
-      flashToggle.addEventListener("click", () => {
-        scanner.toggleFlash().then(() => {
-          flashState.textContent = scanner.isFlashOn() ? "on" : "off";
+        document.getElementById('show-scan-region').addEventListener('change', (e) => {
+            scanner.$canvas.style.display = e.target.checked ? 'block' : 'none';
         });
-      });
 
-      // Focus mode functionality
-      applyFocusModeButton.addEventListener("click", () => {
-        const focusMode = focusModeSelect.value;
-        scanner
-          .setFocusMode(focusMode)
-          .then(() => console.log(`Focus mode set to: ${focusMode}`))
-          .catch((error) => console.error("Failed to set focus mode:", error));
-      });
+        document.getElementById('inversion-mode-select').addEventListener('change', event => {
+            scanner.setInversionMode(event.target.value);
+        });
 
-      document
-        .getElementById("start-button")
-        .addEventListener("click", () => scanner.start());
-      document
-        .getElementById("stop-button")
-        .addEventListener("click", () => scanner.stop());
+        camList.addEventListener('change', event => {
+            scanner.setCamera(event.target.value).then(updateFlashAvailability);
+        });
 
-      // File-based QR scanning
-      fileSelector.addEventListener("change", (event) => {
-        const file = event.target.files[0];
-        if (!file) return;
+        flashToggle.addEventListener('click', () => {
+            scanner.toggleFlash().then(() => {
+                flashState.textContent = scanner.isFlashOn() ? 'on' : 'off';
+            });
+        });
 
-        QrScanner.scanImage(file, { returnDetailedScanResult: true })
-          .then((result) => setResult(fileQrResult, result))
-          .catch((e) =>
-            setResult(fileQrResult, { data: e || "No QR code found." })
-          );
-      });
+        // Tap-to-focus functionality
+        video.addEventListener('click', async (event) => {
+            const rect = video.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            // Show visual feedback
+            focusFeedback.style.left = `${x}px`;
+            focusFeedback.style.top = `${y}px`;
+            focusFeedback.style.display = 'block';
+            setTimeout(() => focusFeedback.style.display = 'none', 1000);
+
+            // Calculate focus point as a fraction of the video dimensions
+            const focusX = x / rect.width;
+            const focusY = y / rect.height;
+
+            try {
+                const videoTrack = video.srcObject.getVideoTracks()[0];
+                await videoTrack.applyConstraints({
+                    advanced: [{ focusMode: 'manual', pointsOfInterest: [{ x: focusX, y: focusY }] }]
+                });
+                console.log(`Focus set to: (${focusX.toFixed(2)}, ${focusY.toFixed(2)})`);
+            } catch (error) {
+                console.error("Failed to set focus:", error);
+            }
+        });
+
+        document.getElementById('start-button').addEventListener('click', () => scanner.start());
+        document.getElementById('stop-button').addEventListener('click', () => scanner.stop());
+
+        // File-based QR scanning
+        fileSelector.addEventListener('change', event => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            QrScanner.scanImage(file, { returnDetailedScanResult: true })
+                .then(result => setResult(fileQrResult, result))
+                .catch(e => setResult(fileQrResult, { data: e || 'No QR code found.' }));
+        });
     </script>
-  </body>
+</body>
 </html>
